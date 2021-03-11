@@ -4,5 +4,7 @@ using UnityEngine;
 
 public class Keeper : Player
 {
-
+    public override void GoToPosition() {
+        this.target = this.startingPosition;
+    }
 }

@@ -4,21 +4,20 @@ using UnityEngine;
 
 public class NPC : MonoBehaviour
 {
-    // TODO just assign a team, then find players in Start();
+    // TODO extend Controller
     public List<Player> npcPlayers;
-    private Dictionary<Player, Vector3> positions;
     public Player.Team team;
     public Ball ball;
 
-    void Start() {
-        this.positions = new Dictionary<Player, Vector3>();
+    void Start()
+    {
+        this.npcPlayers = new List<Player>();
 
-        foreach (Player player in npcPlayers) {
-            this.positions.Add(player, new Vector3(
-                player.transform.position.x,
-                player.transform.position.y,
-                player.transform.position.z
-            ));
+        foreach (Player player in FindObjectsOfType<Player>()) {
+            if (player.team == this.team) {
+                this.npcPlayers.Add(player);
+                player.holdingPosition = true;
+            }
         }
     }
 
@@ -40,9 +39,10 @@ public class NPC : MonoBehaviour
             foreach (Player npc in npcPlayers) {
                 if (npc == nearestNpc) {
                     npc.target = this.ball.transform.position;
+                    npc.holdingPosition = false;
                 } else {
                     // Others return to position.
-                    this.GoToPosition(npc);
+                    npc.holdingPosition = true;
                 }
             }
 
@@ -51,16 +51,13 @@ public class NPC : MonoBehaviour
                 if (npc == this.ball.holder) {
                     // Player with the ball run for the goal.
                     npc.target = Vector3.forward * 10f;
+                    npc.holdingPosition = false;
                 } else {
                     // Others return to position.
-                    this.GoToPosition(npc);
+                    npc.holdingPosition = true;
                 }
             }
             this.ball.holder.target = Vector3.forward * 10f;
         }
-    }
-
-    public void GoToPosition(Player npc) {
-        npc.target = this.positions[npc] + (this.ball.transform.position - this.positions[npc]) / 2;
     }
 }

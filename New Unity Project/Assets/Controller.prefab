@@ -44,5 +44,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectedPlayer: {fileID: 0}
-  quickRunPlayer: {fileID: 0}
+  otherPlayer: {fileID: 0}
+  keeper: {fileID: 0}
+  selector: {fileID: 0}
   team: 1
+  ball: {fileID: 0}

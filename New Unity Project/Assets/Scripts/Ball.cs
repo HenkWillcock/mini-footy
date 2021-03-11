@@ -7,22 +7,23 @@ public class Ball : MonoBehaviour
     public Rigidbody rigidbody;
     public Player holder;
     public bool canBePickedUp = true;
+    public float spin;
 
     void Update()
     {
-        if (this.transform.position.y < -5f) {
-            this.transform.position = Vector3.up;
+        if (this.holder != null) {
+            this.transform.position = this.holder.transform.position;
+            if (!this.holder.standing) {
+                this.holder = null;
+            }
         }
 
-        if (this.holder != null) {
-            if (!this.holder.standing) {
-                this.DropBall();
-            }
-            this.transform.position = this.holder.transform.position;
-        }
+        this.rigidbody.velocity += Quaternion.AngleAxis(90, Vector3.up) * this.rigidbody.velocity.normalized * spin;
     }
 
     public void OnCollisionEnter(Collision collision) {
+        this.spin = 0f;
+
         if (this.holder != null) {
             return;
         }
@@ -30,17 +31,16 @@ public class Ball : MonoBehaviour
         Player catcher = collision.gameObject.GetComponent<Player>();
 
         if (catcher != null && catcher.standing) {
-            this.holder = catcher;
-            this.holder.ball = this;
-
-            foreach (Collider collider in collision.gameObject.GetComponentsInChildren<Collider>()) {
-                Physics.IgnoreCollision(collider, GetComponent<Collider>());
-            }
+            this.SetHolder(catcher.gameObject);
+            catcher.chaseBall = false;
         }
     }
 
-    public void DropBall() {
-        this.holder.ball = null;
-        this.holder = null;
+    public void SetHolder(GameObject player) {
+        this.holder = player.GetComponent<Player>();
+
+        foreach (Collider collider in player.GetComponentsInChildren<Collider>()) {
+            Physics.IgnoreCollision(collider, GetComponent<Collider>());
+        }
     }
 }
