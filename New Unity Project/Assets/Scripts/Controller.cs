@@ -56,7 +56,6 @@ public class Controller : MonoBehaviour
 
     void Update()
     {
-        // TODO after an out, get a randomised starting position.
         if (Input.GetMouseButtonUp(0)) {
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -76,7 +75,7 @@ public class Controller : MonoBehaviour
 
             List<Player> freePlayers = new List<Player>();
             foreach (Player player in this.players) {
-                if (player != this.ball.holder) {
+                if (player != this.ball.holder && player != this.selectedPlayer) {
                     freePlayers.Add(player);
                 }
             }
@@ -89,12 +88,6 @@ public class Controller : MonoBehaviour
 
         if (Input.GetMouseButtonUp(1)) {
             this.MakeRun(this.selectedPlayer);
-        }
-
-        if (Input.GetKeyDown("q") || Input.GetKeyDown("w")) {
-            this.powerBar = 0.5f;
-        } else if ((Input.GetKey("q") || Input.GetKey("w")) && this.powerBar < 1f) {
-            this.powerBar += 0.01f;
         }
 
         if (Input.GetKeyUp("q")) {
@@ -111,9 +104,25 @@ public class Controller : MonoBehaviour
             this.Kick("Right Curl");
         }
 
-        if (Input.GetKeyUp("space")) {
-            this.selectedPlayer.rigidbody.velocity += Vector3.up * 5f;
+        if (Input.GetKeyUp("space") && this.selectedPlayer.IsGrounded()) {
+            this.selectedPlayer.rigidbody.velocity += Vector3.up * 12f;
         }
+
+        if ((Input.GetKey("q") || Input.GetKey("w")) && this.ball.holder != null && this.ball.holder.team == this.team) {
+            this.hud.powerBarValue += 0.01f;
+
+            if (this.hud.powerBarValue > 1f) {
+                if (Input.GetKey("q")) {
+                    this.Kick("Ground");
+                } else if (Input.GetKey("w")) {
+                    this.Kick("Chip");
+                }
+                this.hud.powerBarValue = 0f;
+            }
+        } else {
+            this.hud.powerBarValue = 0f;
+        }
+
         // TODO add jumping.
 
         foreach (Player player in this.players) {
@@ -129,62 +138,21 @@ public class Controller : MonoBehaviour
     }
 
     public void Kick(string type) {
-        if (this.ball.holder == this.selectedPlayer) {
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit)) {
+        if (Physics.Raycast(ray, out hit)) {
+            if (this.selectedPlayer == this.ball.holder) {
                 Player playerClicked = this.PlayerClicked(hit.point, this.players);
 
                 if (playerClicked) {
                     this.selectedPlayer = playerClicked;
-                }                
-
-                if (type == "Ground") {
-                    // TODO power bar
-                    Vector3 towardsTarget = hit.point - this.ball.transform.position;
-                    towardsTarget.y = 0f;
-                    this.ball.rigidbody.velocity = towardsTarget.normalized*12f*this.powerBar;
-
-                } else if (type == "Chip") {
-                    this.ball.rigidbody.position += Vector3.up;
-
-                    Vector3 towardsTarget = hit.point - this.ball.transform.position;
-                    towardsTarget.Normalize();
-                    towardsTarget.y = 1f;
-                    this.ball.rigidbody.velocity = towardsTarget.normalized*12f*this.powerBar;
-
-                } else if (type == "Left Curl") {
-                    this.ball.rigidbody.position += Vector3.up;
-
-                    Vector3 towardsTarget = hit.point - this.ball.transform.position;
-                    towardsTarget.Normalize();
-                    towardsTarget.y = 0.5f;
-                    this.ball.rigidbody.velocity = towardsTarget.normalized*9f;
-
-                    this.ball.spin = -0.1f;
-                } else if (type == "Right Curl") {
-                    this.ball.rigidbody.position += Vector3.up;
-
-                    Vector3 towardsTarget = hit.point - this.ball.transform.position;
-                    towardsTarget.Normalize();
-                    towardsTarget.y = 0.5f;
-                    this.ball.rigidbody.velocity = towardsTarget.normalized*9f;
-
-                    this.ball.spin = 0.1f;
                 }
 
-                StartCoroutine(ReenableCollisions(this.ball.holder));
-                this.ball.holder = null;
+                this.ball.holder.Kick(type, hit.point, this.hud.powerBarValue/2 + 0.5f);
+            } else {
+                this.selectedPlayer.Kick(type, hit.point, this.hud.powerBarValue/2 + 0.5f);
             }
-        }
-    }
-
-    IEnumerator ReenableCollisions(Player oldHolder) {
-        yield return new WaitForSeconds(0.2f);
-
-        foreach (Collider collider in oldHolder.gameObject.GetComponentsInChildren<Collider>()) {
-            Physics.IgnoreCollision(collider, this.ball.GetComponent<Collider>(), false);
         }
     }
 

@@ -50,14 +50,17 @@ public class NPC : MonoBehaviour
             foreach (Player npc in npcPlayers) {
                 if (npc == this.ball.holder) {
                     // Player with the ball run for the goal.
-                    npc.target = Vector3.forward * 10f;
+                    npc.target = Vector3.forward * 12f;
                     npc.holdingPosition = false;
+
+                    if (Vector3.Distance(npc.transform.position, Vector3.forward * 12f) < 10f) {
+                        npc.Kick("Ground", Vector3.forward * 12f, 0.8f);
+                    }
                 } else {
                     // Others return to position.
                     npc.holdingPosition = true;
                 }
             }
-            this.ball.holder.target = Vector3.forward * 10f;
         }
     }
 }

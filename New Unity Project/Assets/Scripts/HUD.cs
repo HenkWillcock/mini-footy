@@ -11,6 +11,8 @@ public class HUD : MonoBehaviour
     public Goal redGoal;
     public Goal blueGoal;
     public Text scoreboard;
+    public Slider powerBar;
+    public float powerBarValue;
 
     void Start() {
         this.allPlayers = new List<Player>(FindObjectsOfType<Player>());
@@ -35,5 +37,7 @@ public class HUD : MonoBehaviour
             }
             this.paused = true;
         }
+        
+        this.powerBar.value = this.powerBarValue;
     }
 }

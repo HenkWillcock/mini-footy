@@ -82,6 +82,7 @@ public class Player : MonoBehaviour
 
     protected void MoveTowardsTarget(float accelleration, float topSpeed, Vector3 target) {
         Vector3 towardsTarget = target - this.rigidbody.position;
+        towardsTarget.y = 0;
         towardsTarget.Normalize();
 
         float accellerationMagnitude = (1 - this.rigidbody.velocity.magnitude/topSpeed) * accelleration;
@@ -94,6 +95,7 @@ public class Player : MonoBehaviour
     public void OnCollisionEnter(Collision collision) {
         Player otherPlayer = collision.gameObject.GetComponent<Player>();
 
+        // TODO have a two seconds of immunity after picking up the ball.
         if (
             this.standing && 
             otherPlayer != null && 
@@ -137,5 +139,56 @@ public class Player : MonoBehaviour
 
     private bool TeamHasBall() {
         return this.ball.holder != null && this.ball.holder != this && this.ball.holder.team == this.team;
+    }
+
+    public void Kick(string type, Vector3 target, float power) {
+        if (this.ball.holder != this) {
+            if (type == "Ground") {
+                this.MoveTowardsTarget(5f, 5f, target);
+            }
+            return;
+        }
+
+        Vector3 towardsTarget = target - this.ball.transform.position;
+        towardsTarget.Normalize();
+
+        if (type == "Ground") {
+            // TODO power bar
+            
+            towardsTarget.y = 0f;
+            this.ball.rigidbody.velocity = towardsTarget.normalized*12f*power;
+
+        } else if (type == "Chip") {
+            this.ball.rigidbody.position += Vector3.up;
+            towardsTarget.y = 1f;
+            this.ball.rigidbody.velocity = towardsTarget.normalized*12f*power;
+
+        } else if (type == "Left Curl") {
+            this.ball.rigidbody.position += Vector3.up;
+            towardsTarget.y = 0.5f;
+            this.ball.rigidbody.velocity = towardsTarget.normalized*9f;
+            this.ball.spin = -0.1f;
+
+        } else if (type == "Right Curl") {
+            this.ball.rigidbody.position += Vector3.up;
+            towardsTarget.y = 0.5f;
+            this.ball.rigidbody.velocity = towardsTarget.normalized*9f;
+            this.ball.spin = 0.1f;
+        }
+
+        StartCoroutine(ReenableCollisions(this.ball.holder));
+        this.ball.holder = null;
+    }
+
+    IEnumerator ReenableCollisions(Player oldHolder) {
+        yield return new WaitForSeconds(0.2f);
+
+        foreach (Collider collider in oldHolder.gameObject.GetComponentsInChildren<Collider>()) {
+            Physics.IgnoreCollision(collider, this.ball.GetComponent<Collider>(), false);
+        }
+    }
+
+    public bool IsGrounded() {
+        return Physics.Raycast(this.transform.position, -Vector3.up, 1f);
     }
 }
